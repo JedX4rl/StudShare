@@ -1,0 +1,804 @@
+basePath: /
+definitions:
+  domain.CreateListingRequest:
+    properties:
+      city:
+        type: string
+      description:
+        type: string
+      images:
+        items:
+          type: string
+        type: array
+      latitude:
+        type: number
+      longitude:
+        type: number
+      preview_url:
+        type: string
+      status:
+        enum:
+        - search
+        - give
+        type: string
+      street:
+        type: string
+      title:
+        type: string
+    required:
+    - city
+    - latitude
+    - longitude
+    - status
+    - title
+    type: object
+  domain.CreateReviewRequest:
+    properties:
+      comment:
+        type: string
+      rating:
+        maximum: 5
+        minimum: 1
+        type: integer
+      target_id:
+        type: string
+    required:
+    - comment
+    - rating
+    - target_id
+    type: object
+  domain.Draft:
+    properties:
+      city:
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+      images:
+        items:
+          type: string
+        type: array
+      latitude:
+        type: number
+      longitude:
+        type: number
+      owner_id:
+        type: string
+      preview_url:
+        type: string
+      status:
+        type: string
+      street:
+        type: string
+      title:
+        type: string
+    type: object
+  domain.FileRequest:
+    properties:
+      content_type:
+        type: string
+      file_name:
+        minLength: 1
+        type: string
+    required:
+    - content_type
+    - file_name
+    type: object
+  domain.FileUploadResponse:
+    properties:
+      file_name:
+        type: string
+      presigned_url:
+        type: string
+      public_url:
+        type: string
+    type: object
+  domain.Listing:
+    properties:
+      city:
+        type: string
+      created_at:
+        type: string
+      description:
+        type: string
+      distance_m:
+        type: number
+      id:
+        type: string
+      images:
+        items:
+          type: string
+        type: array
+      latitude:
+        type: number
+      longitude:
+        type: number
+      owner:
+        $ref: '#/definitions/domain.Owner'
+      preview_url:
+        type: string
+      status:
+        type: string
+      street:
+        type: string
+      title:
+        type: string
+    type: object
+  domain.Owner:
+    properties:
+      id:
+        type: string
+      name:
+        type: string
+      phone:
+        type: string
+      rating:
+        type: number
+      surname:
+        type: string
+    type: object
+  domain.Review:
+    properties:
+      author_id:
+        type: string
+      author_name:
+        type: string
+      comment:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: string
+      rating:
+        type: number
+      target_id:
+        type: string
+    type: object
+  domain.UpdateUserRequest:
+    properties:
+      email:
+        type: string
+      name:
+        minLength: 3
+        type: string
+      password:
+        minLength: 6
+        type: string
+      phone:
+        minLength: 6
+        type: string
+      surname:
+        minLength: 3
+        type: string
+    type: object
+  domain.User:
+    properties:
+      created_at:
+        type: string
+      email:
+        type: string
+      id:
+        type: string
+      is_admin:
+        type: boolean
+      name:
+        type: string
+      password:
+        description: не возвращаем хеш пароля наружу
+        type: string
+      phone:
+        type: string
+      rating:
+        type: number
+      surname:
+        type: string
+    type: object
+  domain.UserRegisterRequest:
+    properties:
+      email:
+        type: string
+      name:
+        minLength: 3
+        type: string
+      password:
+        minLength: 6
+        type: string
+      phone:
+        minLength: 6
+        type: string
+      surname:
+        minLength: 3
+        type: string
+    required:
+    - email
+    - name
+    - password
+    - phone
+    - surname
+    type: object
+info:
+  contact: {}
+  description: API для виртуальной доски объявлений между студентами
+  title: StudShare API
+  version: "1.0"
+paths:
+  /api/files/upload:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Данные о файле
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/domain.FileRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/domain.FileUploadResponse'
+        "400":
+          description: Некорректный запрос
+          schema:
+            type: string
+        "401":
+          description: Неавторизован
+          schema:
+            type: string
+        "500":
+          description: Ошибка сервера
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Генерация URL для загрузки файла
+      tags:
+      - Files
+  /api/listings:
+    delete:
+      parameters:
+      - description: ID объявления
+        in: query
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Некорректный запрос
+          schema:
+            type: string
+        "403":
+          description: Нет доступа
+          schema:
+            type: string
+        "500":
+          description: Ошибка сервера
+          schema:
+            type: string
+      summary: Удалить объявление
+      tags:
+      - Listings
+    get:
+      parameters:
+      - description: Статус объявления
+        in: query
+        name: status
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/domain.Listing'
+            type: array
+        "500":
+          description: Ошибка сервера
+          schema:
+            type: string
+      summary: Получить все объявления (по статусу)
+      tags:
+      - Listings
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Данные объявления
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/domain.CreateListingRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Создано
+          schema:
+            type: string
+        "400":
+          description: Некорректный запрос
+          schema:
+            type: string
+        "401":
+          description: Неавторизован
+          schema:
+            type: string
+        "500":
+          description: Ошибка сервера
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Создание объявления
+      tags:
+      - Listings
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: ID объявления
+        in: query
+        name: id
+        required: true
+        type: string
+      - description: Объявление
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/domain.Listing'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Некорректный запрос
+          schema:
+            type: string
+        "401":
+          description: Неавторизован
+          schema:
+            type: string
+        "403":
+          description: Нет доступа
+          schema:
+            type: string
+        "500":
+          description: Ошибка сервера
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Обновить объявление
+      tags:
+      - Listings
+  /api/listings/:
+    get:
+      parameters:
+      - description: ID объявления
+        in: query
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.Listing'
+        "404":
+          description: Объявление не найдено
+          schema:
+            type: string
+        "500":
+          description: Ошибка сервера
+          schema:
+            type: string
+      summary: Получить объявление по ID
+      tags:
+      - Listings
+  /api/listings/near:
+    get:
+      parameters:
+      - description: Широта
+        in: query
+        name: lat
+        required: true
+        type: number
+      - description: Долгота
+        in: query
+        name: lon
+        required: true
+        type: number
+      - description: Радиус поиска (км)
+        in: query
+        name: radius
+        required: true
+        type: number
+      - description: Статус
+        in: query
+        name: status
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/domain.Listing'
+            type: array
+        "400":
+          description: Некорректные координаты
+          schema:
+            type: string
+        "500":
+          description: Ошибка сервера
+          schema:
+            type: string
+      summary: Получить объявления поблизости
+      tags:
+      - Listings
+  /auth/logout:
+    post:
+      description: Инвалидирует JWT токен
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Выход из аккаунта
+      tags:
+      - auth
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Регистрирует нового пользователя
+      parameters:
+      - description: Данные пользователя
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/domain.UserRegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: created
+          schema:
+            type: string
+        "400":
+          description: invalid request
+          schema:
+            type: string
+        "500":
+          description: internal error
+          schema:
+            type: string
+      summary: Регистрация пользователя
+      tags:
+      - auth
+  /drafts/:
+    delete:
+      parameters:
+      - description: ID черновика
+        in: query
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: deleted
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Удалить черновик по ID
+      tags:
+      - drafts
+    get:
+      parameters:
+      - description: ID черновика
+        in: query
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.Draft'
+        "404":
+          description: Not Found
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Получить черновик по ID
+      tags:
+      - drafts
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Данные черновика
+        in: body
+        name: draft
+        required: true
+        schema:
+          $ref: '#/definitions/domain.Draft'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: created
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Создать черновик объявления
+      tags:
+      - drafts
+  /drafts/all:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/domain.Draft'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Получить все черновики пользователя
+      tags:
+      - drafts
+  /reviews:
+    delete:
+      parameters:
+      - description: Review ID
+        in: query
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: missing review ID
+          schema:
+            type: string
+        "403":
+          description: permission denied
+          schema:
+            type: string
+        "404":
+          description: review not found
+          schema:
+            type: string
+        "500":
+          description: failed to delete review
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Удалить свой отзыв
+      tags:
+      - reviews
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Отзыв
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/domain.CreateReviewRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            type: string
+        "400":
+          description: invalid request body or validation failed
+          schema:
+            type: string
+        "403":
+          description: cannot leave a review for yourself
+          schema:
+            type: string
+        "409":
+          description: review already exists
+          schema:
+            type: string
+        "500":
+          description: failed to add review
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Оставить отзыв
+      tags:
+      - reviews
+  /reviews/user:
+    get:
+      parameters:
+      - description: User ID
+        in: query
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/domain.Review'
+            type: array
+        "400":
+          description: missing user ID
+          schema:
+            type: string
+        "500":
+          description: failed to get reviews
+          schema:
+            type: string
+      summary: Получить отзывы о пользователе
+      tags:
+      - reviews
+  /users:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.User'
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+        "404":
+          description: User not found
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Получить свой профиль
+      tags:
+      - users
+  /users/profile:
+    get:
+      parameters:
+      - description: User ID
+        in: query
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.User'
+        "404":
+          description: User not found
+          schema:
+            type: string
+      summary: Получить профиль пользователя по ID
+      tags:
+      - users
+  /users/update:
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Данные для обновления
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/domain.UpdateUserRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Invalid request or no changes
+          schema:
+            type: string
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+        "404":
+          description: User not found
+          schema:
+            type: string
+        "500":
+          description: Error updating user
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Обновить свой профиль
+      tags:
+      - users
+securityDefinitions:
+  BearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

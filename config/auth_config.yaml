@@ -1,0 +1,2 @@
+token_ttl: 1h
+secret_key: "ACCESS_TOKEN_SECRET"

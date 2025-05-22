@@ -1,0 +1,3 @@
+address: ":8088"
+timeout: 8s
+idle_timeout: 60s
